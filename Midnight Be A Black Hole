@@ -20,9 +20,9 @@ local function addSafetyMeasures()
     -- Anti-AFK
     player.Idled:Connect(function()
         if antiAFK then
-            VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
             wait(0.1)
-            VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
         end
     end)
     
@@ -67,7 +67,7 @@ local objectsToConsume = {
     {"Wolf", "Map.Wolfs.Wolf.Hitbox"},
     {"Car", "Map.Cars.Car.Hitbox"},
     {"MediumTree", "Map.MediumTrees.MediumTree.Hitbox"},
-    {"Bush", "Map.BushesBricks:FindFirstChild('Decoration-Bush').Hitbox"},
+    {"Bush", "Map.Bushes:FindFirstChild('Decoration-Bush').Hitbox"},
     {"Cat", "Map.Cats.Cat.Hitbox"},
     {"Bench", "Map.Benches.Bench.Hitbox"},
     {"Dog", "Map.Dogs.Dog.Hitbox"},
@@ -80,7 +80,7 @@ local objectsToConsume = {
 -- Utility Functions
 local function getRandomDelay()
     if randomDelays then
-        return math.random(100, 300) / 100  -- Random delay between 1-3 seconds
+        return math.random(100, 300) / 100 -- Random delay between 1-3 seconds
     end
     return 1
 end
@@ -89,11 +89,17 @@ local function getObjectFromPath(path)
     local object = workspace
     for _, part in ipairs(path:split(".")) do
         if part:find(":") then
-            local funcName, argName = part:match("([^:]+):([^:]+)")
-            local arg = argName:match("'(.-)'")
-            object = object[funcName:gsub("'", "")](object, arg)
+            local funcName, arg = part:match("([^:]+):([^:]+)")
+            if funcName and arg then
+                arg = arg:gsub("'", "") -- Remove quotes
+                object = object[funcName](object, arg)
+            end
         else
             object = object[part]
+        end
+        if not object then
+            warn("Invalid path:", path)
+            return nil
         end
     end
     return object
@@ -114,8 +120,11 @@ local function consumeObject(objectPath)
         end
     end)
     
-    if not success and safeMode then
-        wait(math.random(5, 10))  -- Extra delay on errors
+    if not success then
+        warn("Error consuming object:", error)
+        if safeMode then
+            wait(math.random(5, 10)) -- Extra delay on errors
+        end
     end
 end
 
@@ -128,7 +137,7 @@ local function startFarming()
             consumeObject(path)
             wait(getRandomDelay())
         end
-        wait(math.random(4, 7))  -- Random delay between cycles
+        wait(math.random(4, 7)) -- Random delay between cycles
     end
 end
 
