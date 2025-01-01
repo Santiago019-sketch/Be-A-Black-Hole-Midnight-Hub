@@ -1,5 +1,19 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Farm Assistant", "Ocean")
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Farm Assistant",
+    LoadingTitle = "Initializing...",
+    LoadingSubtitle = "Please wait",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "FarmAssistantConfigs", -- You can change this
+        FileName = "FarmSettings"
+    },
+    Discord = {
+        Enabled = false
+    },
+    KeySystem = false
+})
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,51 +28,6 @@ local farming = false
 local randomDelays = true
 local antiAFK = true
 local safeMode = true
-
--- Safety Features
-local function addSafetyMeasures()
-    -- Anti-AFK
-    player.Idled:Connect(function()
-        if antiAFK then
-            VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-            wait(0.1)
-            VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-        end
-    end)
-    
-    -- Random Movement Pattern
-    local function randomMovement()
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local randomAngle = math.rad(math.random(1, 360))
-            local distance = math.random(1, 3)
-            local currentPos = player.Character.HumanoidRootPart.Position
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(
-                currentPos.X + math.cos(randomAngle) * distance,
-                currentPos.Y,
-                currentPos.Z + math.sin(randomAngle) * distance
-            )
-        end
-    end
-    
-    -- Random Camera Movement
-    local function randomCamera()
-        if workspace.CurrentCamera then
-            workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * CFrame.fromEulerAnglesXYZ(
-                math.rad(math.random(-5, 5)),
-                math.rad(math.random(-5, 5)),
-                0
-            )
-        end
-    end
-    
-    -- Apply Random Movements
-    RunService.Heartbeat:Connect(function()
-        if farming and safeMode and math.random(1, 100) <= 5 then
-            randomMovement()
-            randomCamera()
-        end
-    end)
-end
 
 -- Objects to Farm
 local objectsToConsume = {
@@ -79,10 +48,7 @@ local objectsToConsume = {
 
 -- Utility Functions
 local function getRandomDelay()
-    if randomDelays then
-        return math.random(100, 300) / 100 -- Random delay between 1-3 seconds
-    end
-    return 1
+    return randomDelays and math.random(100, 300) / 100 or 1
 end
 
 local function getObjectFromPath(path)
@@ -91,7 +57,7 @@ local function getObjectFromPath(path)
         if part:find(":") then
             local funcName, arg = part:match("([^:]+):([^:]+)")
             if funcName and arg then
-                arg = arg:gsub("'", "") -- Remove quotes
+                arg = arg:gsub("'", "")
                 object = object[funcName](object, arg)
             end
         else
@@ -105,76 +71,108 @@ local function getObjectFromPath(path)
     return object
 end
 
--- Farm Function
 local function consumeObject(objectPath)
     if not farming then return end
-    
+
     local success, error = pcall(function()
         local object = getObjectFromPath(objectPath)
         if object then
-            local args = {
-                "ConsumeObject",
-                object
-            }
-            RemoteFunction:InvokeServer(unpack(args))
+            RemoteFunction:InvokeServer("ConsumeObject", object)
         end
     end)
-    
+
     if not success then
         warn("Error consuming object:", error)
         if safeMode then
-            wait(math.random(5, 10)) -- Extra delay on errors
+            wait(math.random(5, 10))
         end
     end
 end
 
--- Main Farm Loop
+-- Farming Logic
 local function startFarming()
     while farming do
         for _, objectInfo in ipairs(objectsToConsume) do
             if not farming then break end
-            local name, path = objectInfo[1], objectInfo[2]
-            consumeObject(path)
+            consumeObject(objectInfo[2])
             wait(getRandomDelay())
         end
-        wait(math.random(4, 7)) -- Random delay between cycles
+        wait(math.random(4, 7)) -- Delay between cycles
     end
 end
 
--- GUI Creation
-local FarmTab = Window:NewTab("Farming")
-local FarmSection = FarmTab:NewSection("Auto Farm")
-
-FarmSection:NewToggle("Start/Stop Farming", "Toggles the auto farm", function(state)
-    farming = state
-    if farming then
-        coroutine.wrap(startFarming)()
+-- Anti-AFK
+player.Idled:Connect(function()
+    if antiAFK then
+        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        wait(0.1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
     end
 end)
 
-FarmSection:NewToggle("Random Delays", "Adds random delays between actions", function(state)
-    randomDelays = state
-end)
+-- UI Tabs and Sections
+local FarmingTab = Window:CreateTab("Farming", 4483362458) -- Farming Icon
+local SafetyTab = Window:CreateTab("Safety", 4483362458) -- Safety Icon
 
-local SafetyTab = Window:NewTab("Safety")
-local SafetySection = SafetyTab:NewSection("Safety Features")
-
-SafetySection:NewToggle("Anti AFK", "Prevents getting kicked for being AFK", function(state)
-    antiAFK = state
-end)
-
-SafetySection:NewToggle("Safe Mode", "Adds random movements and delays", function(state)
-    safeMode = state
-end)
-
--- Initialize Safety Measures
-addSafetyMeasures()
-
--- Keybinds
-local function onKeyPress(input)
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        Library:ToggleUI()
+-- Farming Section
+local farmingToggle = FarmingTab:CreateToggle({
+    Name = "Start/Stop Farming",
+    CurrentValue = false,
+    Flag = "FarmingToggle",
+    Callback = function(state)
+        farming = state
+        if farming then
+            Rayfield:Notify({
+                Title = "Farming Started",
+                Content = "The auto-farm is now active.",
+                Duration = 5
+            })
+            coroutine.wrap(startFarming)()
+        else
+            Rayfield:Notify({
+                Title = "Farming Stopped",
+                Content = "The auto-farm has been stopped.",
+                Duration = 5
+            })
+        end
     end
-end
+})
 
-game:GetService("UserInputService").InputBegan:Connect(onKeyPress)
+FarmingTab:CreateToggle({
+    Name = "Random Delays",
+    CurrentValue = true,
+    Flag = "RandomDelays",
+    Callback = function(state)
+        randomDelays = state
+    end
+})
+
+-- Safety Section
+SafetyTab:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = true,
+    Flag = "AntiAFK",
+    Callback = function(state)
+        antiAFK = state
+    end
+})
+
+SafetyTab:CreateToggle({
+    Name = "Safe Mode",
+    CurrentValue = true,
+    Flag = "SafeMode",
+    Callback = function(state)
+        safeMode = state
+    end
+})
+
+-- Keybind for Toggling UI
+Rayfield:CreateKeybind({
+    Name = "Toggle UI",
+    CurrentKeybind = Enum.KeyCode.RightControl,
+    HoldToInteract = false,
+    Flag = "ToggleUI",
+    Callback = function()
+        Rayfield:Toggle()
+    end
+})
