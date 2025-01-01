@@ -18,9 +18,7 @@ local RemoteFunction = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("R
 -- Variables
 local player = Players.LocalPlayer
 local farming = false
-local randomDelays = true
 local antiAFK = true
-local safeMode = true
 
 -- Farming Targets
 local objectsToConsume = {
@@ -40,10 +38,6 @@ local objectsToConsume = {
 }
 
 -- Utility Functions
-local function getRandomDelay()
-    return randomDelays and math.random(100, 300) / 100 or 1
-end
-
 local function getObjectFromPath(path)
     local object = workspace
     for _, part in ipairs(path:split(".")) do
@@ -65,32 +59,27 @@ local function getObjectFromPath(path)
 end
 
 local function consumeObject(objectPath)
-    if not farming then return end
-
     local success, error = pcall(function()
         local object = getObjectFromPath(objectPath)
         if object then
             RemoteFunction:InvokeServer("ConsumeObject", object)
         end
     end)
-
     if not success then
         warn("Error consuming object:", error)
-        if safeMode then
-            wait(math.random(5, 10))
-        end
     end
 end
 
--- Farming Logic
+-- Farming Logic (Fast)
 local function startFarming()
     while farming do
         for _, objectInfo in ipairs(objectsToConsume) do
             if not farming then break end
-            consumeObject(objectInfo[2])
-            wait(getRandomDelay())
+            coroutine.wrap(function()
+                consumeObject(objectInfo[2])
+            end)()
         end
-        wait(math.random(4, 7)) -- Delay between cycles
+        wait(0.05) -- Minimal delay between cycles
     end
 end
 
@@ -125,7 +114,7 @@ FarmingTab:AddToggle({
         if farming then
             OrionLib:MakeNotification({
                 Name = "Farming Started",
-                Content = "The auto-farm is now active.",
+                Content = "The auto-farm is now running at high speed.",
                 Image = "rbxassetid://4483362458",
                 Time = 5
             })
@@ -141,28 +130,12 @@ FarmingTab:AddToggle({
     end
 })
 
-FarmingTab:AddToggle({
-    Name = "Random Delays",
-    Default = true,
-    Callback = function(state)
-        randomDelays = state
-    end
-})
-
 -- Safety Section
 SafetyTab:AddToggle({
     Name = "Anti AFK",
     Default = true,
     Callback = function(state)
         antiAFK = state
-    end
-})
-
-SafetyTab:AddToggle({
-    Name = "Safe Mode",
-    Default = true,
-    Callback = function(state)
-        safeMode = state
     end
 })
 
