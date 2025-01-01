@@ -1,0 +1,76 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RemoteFunction = ReplicatedStorage.Remotes.RemoteFunction
+
+-- Table of objects to consume and their paths
+local objectsToConsume = {
+    {"QuantumFlowers", "Map.newflowers.QuantumFlowers.Hitbox"},
+    {"TreeTrunk", "Map.TreeTrunks.TreeTrunk.Hitbox"},
+    {"Wolf", "Map.Wolfs.Wolf.Hitbox"},
+    {"Car", "Map.Cars.Car.Hitbox"},
+    {"MediumTree", "Map.MediumTrees.MediumTree.Hitbox"},
+    {"Bush", "Map.BushesBricks:FindFirstChild('Decoration-Bush').Hitbox"},
+    {"Cat", "Map.Cats.Cat.Hitbox"},
+    {"Bench", "Map.Benches.Bench.Hitbox"},
+    {"Dog", "Map.Dogs.Dog.Hitbox"},
+    {"RoadLight", "Map.RoadLights.RoadLight.Hitbox"},
+    {"Cactus", "Map.Cactus.Model.Hitbox"},
+    {"BeachChair", "Map.BeachChairs.BeachChairWithUmbrella.Hitbox"},
+    {"SmallHouse", "Map.SmallHouses.SmallBuilding.Hitbox"}
+}
+
+-- Function to get an object from a path string
+local function getObjectFromPath(path)
+    local object = workspace
+    for _, part in ipairs(path:split(".")) do
+        if part:find(":") then
+            -- Handle FindFirstChild cases
+            local funcName, argName = part:match("([^:]+):([^:]+)")
+            local arg = argName:match("'(.-)'")
+            object = object[funcName:gsub("'", "")](object, arg)
+        else
+            object = object[part]
+        end
+    end
+    return object
+end
+
+-- Function to consume a single object
+local function consumeObject(objectPath)
+    local success, error = pcall(function()
+        local object = getObjectFromPath(objectPath)
+        if object then
+            local args = {
+                "ConsumeObject",
+                object
+            }
+            RemoteFunction:InvokeServer(unpack(args))
+        end
+    end)
+    
+    if not success then
+        warn("Failed to consume object: " .. objectPath .. "\nError: " .. tostring(error))
+    end
+end
+
+-- Main auto-farm loop
+local function startAutoFarm()
+    while true do
+        for _, objectInfo in ipairs(objectsToConsume) do
+            local name, path = objectInfo[1], objectInfo[2]
+            print("Attempting to consume: " .. name)
+            consumeObject(path)
+            wait(1) -- Add a delay between consuming objects to prevent overload
+        end
+        wait(5) -- Wait before starting the next cycle
+        print("Completed one cycle, starting next...")
+    end
+end
+
+-- Error handling wrapper
+local success, error = pcall(function()
+    startAutoFarm()
+end)
+
+if not success then
+    warn("Auto-farm script encountered an error: " .. tostring(error))
+end
