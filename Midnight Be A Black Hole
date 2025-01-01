@@ -1,18 +1,15 @@
 local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Farm Assistant",
-    LoadingTitle = "Initializing...",
-    LoadingSubtitle = "Please wait",
+    Name = "Farm Assistant V2",
+    LoadingTitle = "Starting Farm Assistant...",
+    LoadingSubtitle = "Please wait a moment",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "FarmAssistantConfigs", -- You can change this
+        FolderName = "FarmAssistantConfigs",
         FileName = "FarmSettings"
     },
-    Discord = {
-        Enabled = false
-    },
-    KeySystem = false
+    KeySystem = false -- No key required for access
 })
 
 -- Services
@@ -29,7 +26,7 @@ local randomDelays = true
 local antiAFK = true
 local safeMode = true
 
--- Objects to Farm
+-- Farming Targets
 local objectsToConsume = {
     {"QuantumFlowers", "Map.newflowers.QuantumFlowers.Hitbox"},
     {"TreeTrunk", "Map.TreeTrunks.TreeTrunk.Hitbox"},
@@ -115,7 +112,7 @@ local FarmingTab = Window:CreateTab("Farming", 4483362458) -- Farming Icon
 local SafetyTab = Window:CreateTab("Safety", 4483362458) -- Safety Icon
 
 -- Farming Section
-local farmingToggle = FarmingTab:CreateToggle({
+FarmingTab:CreateToggle({
     Name = "Start/Stop Farming",
     CurrentValue = false,
     Flag = "FarmingToggle",
