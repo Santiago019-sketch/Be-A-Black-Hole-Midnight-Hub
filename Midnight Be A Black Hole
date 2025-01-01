@@ -1,23 +1,17 @@
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
-local Window = Rayfield:CreateWindow({
+local Window = OrionLib:MakeWindow({
     Name = "Farm Assistant V2",
-    LoadingTitle = "Starting Farm Assistant...",
-    LoadingSubtitle = "Please wait a moment",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "FarmAssistantConfigs",
-        FileName = "FarmSettings"
-    },
-    KeySystem = false -- No key required for access
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "FarmAssistantConfigs"
 })
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local RemoteFunction = ReplicatedStorage.Remotes.RemoteFunction
+local RemoteFunction = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RemoteFunction")
 
 -- Variables
 local player = Players.LocalPlayer
@@ -108,68 +102,74 @@ player.Idled:Connect(function()
 end)
 
 -- UI Tabs and Sections
-local FarmingTab = Window:CreateTab("Farming", 4483362458) -- Farming Icon
-local SafetyTab = Window:CreateTab("Safety", 4483362458) -- Safety Icon
+local FarmingTab = Window:MakeTab({
+    Name = "Farming",
+    Icon = "rbxassetid://4483362458",
+    PremiumOnly = false
+})
+
+local SafetyTab = Window:MakeTab({
+    Name = "Safety",
+    Icon = "rbxassetid://4483362458",
+    PremiumOnly = false
+})
 
 -- Farming Section
-FarmingTab:CreateToggle({
+FarmingTab:AddToggle({
     Name = "Start/Stop Farming",
-    CurrentValue = false,
-    Flag = "FarmingToggle",
+    Default = false,
     Callback = function(state)
         farming = state
         if farming then
-            Rayfield:Notify({
-                Title = "Farming Started",
+            OrionLib:MakeNotification({
+                Name = "Farming Started",
                 Content = "The auto-farm is now active.",
-                Duration = 5
+                Image = "rbxassetid://4483362458",
+                Time = 5
             })
             coroutine.wrap(startFarming)()
         else
-            Rayfield:Notify({
-                Title = "Farming Stopped",
+            OrionLib:MakeNotification({
+                Name = "Farming Stopped",
                 Content = "The auto-farm has been stopped.",
-                Duration = 5
+                Image = "rbxassetid://4483362458",
+                Time = 5
             })
         end
     end
 })
 
-FarmingTab:CreateToggle({
+FarmingTab:AddToggle({
     Name = "Random Delays",
-    CurrentValue = true,
-    Flag = "RandomDelays",
+    Default = true,
     Callback = function(state)
         randomDelays = state
     end
 })
 
 -- Safety Section
-SafetyTab:CreateToggle({
+SafetyTab:AddToggle({
     Name = "Anti AFK",
-    CurrentValue = true,
-    Flag = "AntiAFK",
+    Default = true,
     Callback = function(state)
         antiAFK = state
     end
 })
 
-SafetyTab:CreateToggle({
+SafetyTab:AddToggle({
     Name = "Safe Mode",
-    CurrentValue = true,
-    Flag = "SafeMode",
+    Default = true,
     Callback = function(state)
         safeMode = state
     end
 })
 
--- Keybind for Toggling UI
-Rayfield:CreateKeybind({
+-- UI Settings
+Window:MakeKeybind({
     Name = "Toggle UI",
-    CurrentKeybind = Enum.KeyCode.RightControl,
+    Default = Enum.KeyCode.RightControl,
     HoldToInteract = false,
-    Flag = "ToggleUI",
     Callback = function()
-        Rayfield:Toggle()
+        OrionLib:ToggleUI()
     end
 })
