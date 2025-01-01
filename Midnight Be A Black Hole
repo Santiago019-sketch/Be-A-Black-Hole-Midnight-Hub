@@ -1,5 +1,7 @@
+-- Load OrionLib
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
+-- Create the Main Window
 local Window = OrionLib:MakeWindow({
     Name = "Farm Assistant V2",
     HidePremium = false,
@@ -173,3 +175,6 @@ Window:MakeKeybind({
         OrionLib:ToggleUI()
     end
 })
+
+-- Finalize OrionLib
+OrionLib:Init()
